@@ -1,0 +1,20 @@
+title: "My Research Portfolio"
+author: "Your Name"
+email: "your.mail@example.com"
+description: "A personal site showcasing my CV, papers, and talks."
+baseurl: ""
+url: "https://yourusername.github.io"
+theme: jekyllBear
+
+# Navigation
+navbar-links:
+  About: "index.html"
+  CV: "cv.html"
+  Papers: "papers.html"
+  Talks: "talks.html"
+
+# Build settings
+markdown: kramdown
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
