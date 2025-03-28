@@ -50,7 +50,7 @@ As a part-time job at the <a href="https://www.ac.tuwien.ac.at/">Algorithms and 
 </details>
 <details>
 
-<summary><strong>Junior Data Scientist</strong><i>, XUND, August 2021 - August 2023</i> </br> </summary>
+<summary><strong>Junior Data Scientist</strong>, XUND, <i>August 2021 - August 2023</i> </br> </summary>
 
 At <a href="https://xund.ai">XUND</a>, a Viennese healthtech startup, I developed medium sized language models which extracted structured information from publicly available literature about medicine. There, I was able to learn many things about how to build and deploy AI and collaborate with others to develop innovative new kinds of software.
 
