@@ -9,8 +9,8 @@ extra.in_header = true
 <details>
 <summary><strong>Exchange Semester</strong>, UPC Barcelona, <i>February 2025 - July 2025</i></summary>
 
-I am currently enjoying an Erasmus semester in Barcelona, taking the courses <a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/AGT-MIRI"> Algorithmic Game Theory</a>, <a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/CC-MIRI"> Computational Complexity</a>, <a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/ADS-MIRI"> Advanced Data Structures </a> and
-<a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/MASD-MAI"> Multiagent System Design</a>.
+I am currently enjoying an Erasmus semester in Barcelona, taking the courses <a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/AGT-MIRI">Algorithmic Game Theory</a>, <a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/CC-MIRI">Computational Complexity</a>, <a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/ADS-MIRI">Advanced Data Structures</a> and
+<a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/MASD-MAI">Multiagent System Design</a>.
 
 </details>
 
@@ -18,7 +18,7 @@ I am currently enjoying an Erasmus semester in Barcelona, taking the courses <a 
 
 <summary><strong>MSc Logic and Computation</strong>, TU Wien, <i>October 2023 - ongoing</i></summary>
 
-At TU Wien, I am primarily exploring the tractability and/or inherent difficulty of certain problems. Some of my favorite courses were <a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/MASD-MAI"> Algorithmic Social Choice </a>, <a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/MASD-MAI"> Algorithmic Meta Theorems</a>, <a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/MASD-MAI"> Logic and Computability</a> and <a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/MASD-MAI"> Algorithmics</a>.
+At TU Wien, I am taking courses primarily concerned with the tractability and/or inherent difficulty of certain problems. Some of my favorite courses were <a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/MASD-MAI">Algorithmic Social Choice</a>, <a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/MASD-MAI"> Algorithmic Meta Theorems</a>, <a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/MASD-MAI">Logic and Computability</a> and <a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/MASD-MAI">Algorithmics</a>.
 
 Considering my current GPA of 1.4 (on a scale of one to five), I am on my way to graduate with distinction.
 
@@ -27,7 +27,7 @@ Considering my current GPA of 1.4 (on a scale of one to five), I am on my way to
 <details>
 <summary><strong>BSc Artificial Intelligence</strong>, JKU Linz, <i>October 2019 - September 2023</i></summary>
 
-At JKU Linz, I learned about the foundations of computer science, with an emphasis on mathematics, logics and machine learning. My favorite courses were <a href="https://studienhandbuch.jku.at/detail.php?id=125355_2019W"> Mathematics for AI II</a> (and the other lectures of the series), <a href="https://studienhandbuch.jku.at/104464?lang=en">Computational Logics for AI</a>, <a href="https://studienhandbuch.jku.at/153119"> Sequence Analysis and Phylogenetics </a> and <a href="https://studienhandbuch.jku.at/119811"> Machine Learning: Supervised Techniques</a>.
+At JKU Linz, I learned the foundations of computer science, with a distinct focus on mathematics, logics and machine learning. My favorite courses were <a href="https://studienhandbuch.jku.at/detail.php?id=125355_2019W"> Mathematics for AI II</a> (and the other lectures of the series), <a href="https://studienhandbuch.jku.at/104464?lang=en">Computational Logics for AI</a>, <a href="https://studienhandbuch.jku.at/153119"> Sequence Analysis and Phylogenetics </a> and <a href="https://studienhandbuch.jku.at/119811"> Machine Learning: Supervised Techniques</a>.
 
 </details>
 
@@ -50,8 +50,7 @@ As a part-time job at the <a href="https://www.ac.tuwien.ac.at/">Algorithms and 
 </details>
 <details>
 
-<summary><strong>Junior Data Scientist</strong><i>, XUND
-August 2021 - August 2023</i> </br> </summary>
+<summary><strong>Junior Data Scientist</strong><i>, XUND, August 2021 - August 2023</i> </br> </summary>
 
 At <a href="https://xund.ai">XUND</a>, a Viennese healthtech startup, I developed medium sized language models which extracted structured information from publicly available literature about medicine. There, I was able to learn many things about how to build and deploy AI and collaborate with others to develop innovative new kinds of software.
 
