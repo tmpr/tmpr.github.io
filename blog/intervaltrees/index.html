@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Alexander Temper&#x27;s website | Interval-trees in Uiua</title>
+    
+    <link rel="stylesheet" href="https://tmpr.github.io/style.css?h=7e7e74840c88d4974d32">
+    
+    
+        
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;tmpr.github.io">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>Interval-trees in Uiua</h1>
+    
+    <p class="secondary small">
+        9 June, 2025
+
+        
+        
+        
+
+        
+    </p>
+    
+    <div class="space"></div>
+    <p>As part of the course <a href="https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/ADS-MIRI">Advanced Datastructures</a> at <a href="https://www.fib.upc.edu/en">UPC</a> in Barcelona, we were asked to implement so called <a href="https://en.wikipedia.org/wiki/Interval_tree">interval-trees</a> to solve the line-stabbing problem. I felt it would be interesting to see what it was like to implement a datastructure in <a href="https://www.uiua.org/">Uiua</a>. In this post, I will show and compare three Uiua implementations.</p>
+<h2 id="the-problem">The Problem</h2>
+<p>To illustrate the motivating problem, consider the following. Imagine you work at an office and everybody there works during certain windows of time. Those shifts are characterized by starting points and end points; they are intervals.
+Now suppose you would like to
+know which of your <code>n</code>
+coworkers is present at the
+office at any given point(s) in time, as illustrated below. We call one such question a <em>query</em> here.</p>
+<pre><code>                     ?
+Fred │   ────────────|──────────
+Jaya │           ────|──────────────────────
+Susi │       ────────|────────
+Maya │               |     ──────────────────
+Nina │              ─|─────────────────────
+                     ?
+        8am   10am  12pm  14pm  16pm  18pm  20pm  22pm
+</code></pre>
+<p>The naive way to answer a query is to check whether each
+of your co-workers is present
+individually; this approach is exactly linear in the
+number of coworkers <code>n</code>, that is, <code>O(n)</code>.</p>
+<p>Astute readers will see that this is optimal - after all, it is possible that there is some time during the day at which everyone is at the office; reporting that would require at least <code>n</code> operations.</p>
+<p>However, if we consider the size of the output <code>m</code> as its own parameter, we can do better, namely there is a data-structure for intervals which can be queried in <code>O(log n + m)</code> time, i.e., it provides an <a href="https://en.wikipedia.org/wiki/Output-sensitive_algorithm">output-sensitive algorithm</a>.</p>
+<h2 id="interval-trees">Interval-trees</h2>
+<h3 id="the-basic-idea">The basic idea</h3>
+<p>As so often in algorithmics,
+the answer is to <a href="https://en.wikipedia.org/wiki/Divide-and-conquer_algorithm">divide-and-conquer</a>. Let <code>M</code> be the median of all the <code>2n</code> endpoints of the intervals. The basic principles
+of the datastructure are the
+following.</p>
+<ul>
+<li>An interval can either contain <code>M</code>, be to its left or to its right.</li>
+<li>When querying for a point, if it is to the left of the <code>M</code>, no interval which lies on the right of the median will contain it, and vice versa.</li>
+</ul>
+<p>As such, the first step to an interval tree is as follows. Store for a given set of intervals its median and the intervals that contain the median. In addition, recursively constructing an interval-tree <code>L</code> to the left (<code>R</code> respectively to the right) with the intervals that lie to the left (respectively to the right) of <code>M</code>.</p>
+<pre><code> Intervals:  │ Corresponding tree: 
+    [0  1]   │            ┌─
+    [2  5]   │            │ [2 5] │ M = 3.5 
+    [3  4]   │            │ [3 4] │ 
+    [6  7]   │                    ┘
+             │          &#x2F;          \
+             │     ┌─              ┌─   
+             │   L │ [1 2] │       │ [6 7] │ R
+             │             ┘               ┘
+</code></pre>
+<p>To query, check
+the intervals that contain the
+median and recurse either into the left or
+the right subtree. As the median
+always halves the number of
+intervals, the tree will have <code>O(log n)</code> levels.</p>
+<p>However, consider what would happen if we query which of the the intervals
+<code>[[1 6] [2 5] [3 4]]</code>  contains the number <code>1.1</code>. As all of the intervals contain the median of <code>2.5</code>, our current idea of an interval-tree would have only one level. Clearly, only <code>[1 6]</code> contains <code>1.1</code>, yet, all intervals on that level are being checked --- the worst-case complexity remains <code>O(n)</code>.</p>
+<h3 id="the-refinement">The refinement</h3>
+<p>To combat the above issue, interval-trees entertain another useful optmization. Consider the example from before of querying <code>[[1 6] [2 5] [3 4]]</code>. Mentally, it is natural to visualize the intervals and take everything that starts to the left of <code>1.1</code> and then stop. As such, I will call this trick <em>early stopping</em>. Like this, only as many operations are performed for reporting intervals as are needed. Formally what is done is that each level stores its intervals in two forms: once sorted by the left endpoints, and once by the right endpoints.</p>
+<pre><code>          ┌─
+          │ [2 5] | [3 4] │ M = 3.5 
+          │ [3 4] | [2 5] │ 
+                          ┘
+        &#x2F;                  \
+      L                      R
+</code></pre>
+<p>The query is similar as before, however if the required point is to the left of <code>M</code>, one iterates through the intervals sorted by the left and stops once an interval with a greater starting point than the query point is found, and otherwise one does the analogue on the right side. Finally, this achieves a query time of <code>O(log n + m)</code>.</p>
+<h2 id="uiua">Uiua</h2>
+<p>Lately, I have found great joy in using Uiua, which is a progamming language that is</p>
+<ul>
+<li><em>array based</em>: fundamentally, everything is an array,</li>
+<li><em>stack-based</em>: inputs and outputs are put on a stack, and</li>
+<li><em>point-free</em>: there are no
+parameters or variable
+names within functions.</li>
+</ul>
+<p>Since I was curious about the experience of implementing a datastructure in Uiua, I got my hands dirty and went at it. However, before looking at the implementations, let me introduce you to some basic principles of Uiua via examples, which are somewhat self-explanatory if one hovers over the symbols to see their meaning.</p>
+<div >
+	<iframe id="0_17_0-dev_1__MSAxICMgRGF0YSBpcyBwdXQgb24gdGhlIHN0YWNrCgorIDEgMSAjIEZ1bmN0aW9ucyBjYW4gYmUgYXBwbGllZCB0byB0aGUgc3RhY2sgCgpb4oqD4oyK4oyIIDAuNV0gICAgICAjIOKKgyBhcHBsaWVzIHR3byBmdW5jdGlvbnMgdG8gdGhlIHRvcCwKW-KKg-KKg-KMiuKMiCgrMSkgMC41XSAjIGFuZCDiioPiioMgYXBwbGllcyB0aHJlZS4KClsrIDEgMV0gICMgRnVuY3Rpb25zIG5vcm1hbGx5IGNvbnN1bWUgaW5wdXRzLCBidXQKW-KfnCsgMSAxXSAjIOKfnCBrZWVwcyBmaXJzdCBhcmd1bWVudCBvbiBvdXRwdXQgYW5kClvipJorIDEgMV0gIyDipJoga2VlcHMgZmlyc3QgYXJndW1lbnQgdW5kZXIgb3V0cHV0Lgo=" frameborder="0" style="width: 100%; border:none; height: 525px" 
+					      src="https://uiua.org/embed?src=0_17_0-dev_1__MSAxICMgRGF0YSBpcyBwdXQgb24gdGhlIHN0YWNrCgorIDEgMSAjIEZ1bmN0aW9ucyBjYW4gYmUgYXBwbGllZCB0byB0aGUgc3RhY2sgCgpb4oqD4oyK4oyIIDAuNV0gICAgICAjIOKKgyBhcHBsaWVzIHR3byBmdW5jdGlvbnMgdG8gdGhlIHRvcCwKW-KKg-KKg-KMiuKMiCgrMSkgMC41XSAjIGFuZCDiioPiioMgYXBwbGllcyB0aHJlZS4KClsrIDEgMV0gICMgRnVuY3Rpb25zIG5vcm1hbGx5IGNvbnN1bWUgaW5wdXRzLCBidXQKW-KfnCsgMSAxXSAjIOKfnCBrZWVwcyBmaXJzdCBhcmd1bWVudCBvbiBvdXRwdXQgYW5kClvipJorIDEgMV0gIyDipJoga2VlcHMgZmlyc3QgYXJndW1lbnQgdW5kZXIgb3V0cHV0Lgo="
+					      webkitallowfullscreen
+					      mozallowfullscreen
+
+					      allowfullscreen>
+	</iframe>
+</div>
+<p>For a full introduction to the language, the <a href="https://www.uiua.org/tutorial/introduction">tutorial</a> is expansive and provides a good entry point to this wonderful language, whereas the <a href="https://www.uiua.org/tour">language tour</a> is a rather quick read.</p>
+<h3 id="the-hypothesis">The Hypothesis</h3>
+<p>Uiua is an interpreted language. In practice, this means that operations on arrays are fast, while more granular operations which happen on the Uiua level are slower. Just as an example, consider the following two ways to compute the sum the sine values of the first fifty thousand numbers, and their corresponding times. The first one operates largely on the Uiua level, whereas the latter operates more on the rust level. When I ran it, there was a speedup of approximately 300 when opting for the array-based code rather than the one using repeat (<code>⍥</code>), which is like a for-loop. As a bonus, the latter is in my opinion quite readable.</p>
+<div >
+	<iframe id="0_17_0-dev_1__IyAiTWFudWFsIgpb4o2cbm93KOKXjOKNpSjiioMo4oqZ4peMKzEpKCviiL8pKTVlNCAwIDApXQojIEFycmF5LWJhc2VkClvijZxub3coLyviiL_ih6E1ZTQpXQojIENvbXB1dGUgc3BlZWR1cAril6Eo4oGF4oqiw7cpCg==" frameborder="0" style="width: 100%; border:none; height: 300px" 
+					      src="https://uiua.org/embed?src=0_17_0-dev_1__IyAiTWFudWFsIgpb4o2cbm93KOKXjOKNpSjiioMo4oqZ4peMKzEpKCviiL8pKTVlNCAwIDApXQojIEFycmF5LWJhc2VkClvijZxub3coLyviiL_ih6E1ZTQpXQojIENvbXB1dGUgc3BlZWR1cAril6Eo4oGF4oqiw7cpCg=="
+					      webkitallowfullscreen
+					      mozallowfullscreen
+
+					      allowfullscreen>
+	</iframe>
+</div>
+<p>This leads me to one major problem with regards to implementing an interval tree in Uiua: there is no array-based way to "stop" when iterating over the sorted intervals as is done in interval-trees. Thus, the question I would like to address in this work is the following:</p>
+<blockquote>
+<p>How do different implementations of interval-trees compare in terms of actual execution speed?</p>
+</blockquote>
+<h2 id="the-implementations">The Implementations</h2>
+<p>I will make some assumptions. Namely, I will assume that different "non-array-based" ways to find the first interval in a sorted array which has a smaller/greater start-/end-point than some number are similarly performant. That is why I will present only one of them.</p>
+<p>As such, I will consider three different ways to solve the line-stabbing problem. First, I will consider the naive solution, that is, just checking every interval. As this can be done using array-based operations, this is still a viable option in Uiua.</p>
+<p>Then, I will consider the solution in which something like an interval-tree is queried, however, each level of the tree is checked completely without stopping. As there are only logarithmically many operations on the Uiua side of things, this might still be quite fast.</p>
+<p>Lastly, I will consider the textbook implementation of an interval-tree in Uiua, which includes checking intervals on the Uiua level. Asypmtotically, this will be the best thing, yet I (correctly) conjectured that practically, this will be the slowest option.</p>
+<p>I list the full code right here, and will elaborate on the individual bindings later in more detail. Recall that hovering over them explains the symbols.</p>
+<div >
+	<iframe id="https:&#x2F;&#x2F;www.uiua.org&#x2F;pad?src=0_17_0-dev_1__4pSM4pSA4pW0SVQKICB-IHtMIENMIENSIFIgTSBBbGx9CiAgTWVkaWFuIOKGkCDDtzIgLysg4oqP4oqfIOKKg-KMiuKMiCDDtzItMeKnuy4g4o2GCiAgSXNMICAgIOKGkCA-4oqj4o2JCiAgSXNSICAgIOKGkCA84oqi4o2JCiAgSXNDcm9zIOKGkCDDl-KKgyjCrElzTCkowqxJc1IpCiAgU0wgICAgIOKGkCDijYYKICBTUiAgICAg4oaQIOKNnOKJoeKHjOKNhgogIEVtcHR5ICDihpAgPTDip7sKCiAgSW5pdCDihpAgfDEgKAogICAgRW1wdHkuCiAgICDiqKwo4p-cKE1lZGlhbuKZrSnijYYKICAgICAgSVTiioPiioPiioPiioMoSW5pdOKWveKkmklzTCko4oqDU0wgU1Lilr3ipJpJc0Nyb3MpKEluaXTilr3ipJpJc1IpKOKLheKImCko4oqZ4peMKQogICAgfCBbXSkKICApCgogIFFOYWl2ZSDihpAg4pa94qSaSVR-SXNDcm9zIElUfkFsbAoKICBRU2ltcGxlIOKGkCB8MiAoCiAgICBFbXB0eS4KICAgIOKorCjiioLiioMo4pa94qSaSXNDcm9zIENMKSjiqKwoUVNpbXBsZSBMfFFTaW1wbGUgUinil6EoPk0pKQogICAgfCBbXSkKICApCgogIEZpbHRlckNMIOKGkCDiipnil4wg4o2i4oaY4oKBIOKNoyjil6EoPOKKouKKoil8MCkg4oeMIENMCiAgRmlsdGVyQ1Ig4oaQIOKKmeKXjCDijaLihpjigoEg4o2jKOKXoSg-4oqj4oqiKXwwKSBDUgogIFFDbGV2ZXIg4oaQIHwyICgKICAgID0w4qe7LgogICAg4qisKOKXoSg-TSkKICAgICAg4qisKOKKguKKgyhGaWx0ZXJDTCkoUUNsZXZlciBMKQogICAgICB8IOKKguKKgyhGaWx0ZXJDUikoUUNsZXZlciBSKQogICAgICApCiAgICB8IFtdCiAgICApCiAgKQrilJTilIDilbQKPyBJVH5Jbml0IFtbMCAxXSBbMiA1XSBbMyA0XSBbNiA3XV0K4oqD4oqDSVR-UU5haXZlIElUflFTaW1wbGUgSVR-UUNsZXZlciA6IDIK" frameborder="0" style="width: 100%; border:none; height: 1600px" 
+					      src="https://uiua.org/embed?src=https:&#x2F;&#x2F;www.uiua.org&#x2F;pad?src=0_17_0-dev_1__4pSM4pSA4pW0SVQKICB-IHtMIENMIENSIFIgTSBBbGx9CiAgTWVkaWFuIOKGkCDDtzIgLysg4oqP4oqfIOKKg-KMiuKMiCDDtzItMeKnuy4g4o2GCiAgSXNMICAgIOKGkCA-4oqj4o2JCiAgSXNSICAgIOKGkCA84oqi4o2JCiAgSXNDcm9zIOKGkCDDl-KKgyjCrElzTCkowqxJc1IpCiAgU0wgICAgIOKGkCDijYYKICBTUiAgICAg4oaQIOKNnOKJoeKHjOKNhgogIEVtcHR5ICDihpAgPTDip7sKCiAgSW5pdCDihpAgfDEgKAogICAgRW1wdHkuCiAgICDiqKwo4p-cKE1lZGlhbuKZrSnijYYKICAgICAgSVTiioPiioPiioPiioMoSW5pdOKWveKkmklzTCko4oqDU0wgU1Lilr3ipJpJc0Nyb3MpKEluaXTilr3ipJpJc1IpKOKLheKImCko4oqZ4peMKQogICAgfCBbXSkKICApCgogIFFOYWl2ZSDihpAg4pa94qSaSVR-SXNDcm9zIElUfkFsbAoKICBRU2ltcGxlIOKGkCB8MiAoCiAgICBFbXB0eS4KICAgIOKorCjiioLiioMo4pa94qSaSXNDcm9zIENMKSjiqKwoUVNpbXBsZSBMfFFTaW1wbGUgUinil6EoPk0pKQogICAgfCBbXSkKICApCgogIEZpbHRlckNMIOKGkCDiipnil4wg4o2i4oaY4oKBIOKNoyjil6EoPOKKouKKoil8MCkg4oeMIENMCiAgRmlsdGVyQ1Ig4oaQIOKKmeKXjCDijaLihpjigoEg4o2jKOKXoSg-4oqj4oqiKXwwKSBDUgogIFFDbGV2ZXIg4oaQIHwyICgKICAgID0w4qe7LgogICAg4qisKOKXoSg-TSkKICAgICAg4qisKOKKguKKgyhGaWx0ZXJDTCkoUUNsZXZlciBMKQogICAgICB8IOKKguKKgyhGaWx0ZXJDUikoUUNsZXZlciBSKQogICAgICApCiAgICB8IFtdCiAgICApCiAgKQrilJTilIDilbQKPyBJVH5Jbml0IFtbMCAxXSBbMiA1XSBbMyA0XSBbNiA3XV0K4oqD4oqDSVR-UU5haXZlIElUflFTaW1wbGUgSVR-UUNsZXZlciA6IDIK"
+					      webkitallowfullscreen
+					      mozallowfullscreen
+
+					      allowfullscreen>
+	</iframe>
+</div>
+<p>The implementation is models interval-trees as a Uiua object with the fields <code>L,CL, CR, R, M, All</code>, which stands for <em>left, crossing sorted by left, crossing sorted by right, right, and all intervals</em> respectively.</p>
+<h4 id="initialization">Initialization</h4>
+<p>The code that initializes an interval-tree is the following.</p>
+<pre><code>  Init ← |1 (
+    Empty.
+    ⨬(⟜(Median♭)⍆
+      IT⊃⊃⊃⊃(Init▽⤚IsL)(⊃SL SR▽⤚IsCros)(Init▽⤚IsR)(⋅∘)(⊙◌)
+    | [])
+  )
+</code></pre>
+<p>It reads as follows, from top down, right to left: if the given
+array is empty, return an empty array. This is
+checked using  <a href="https://www.uiua.org/docs/switch"><code>⨬ switch</code></a>. Else flatten the array with <a href="https://www.uiua.org/docs/deshape"><code>♭ deshape</code></a> and compute its median, whilst keeping the
+array on top.
+At this point in time, the stack has the intervals on it, followed by the median. To the intervals and the median, apply six different functions using a chain of <a href="https://www.uiua.org/docs/fork"><code>⊃ fork</code></a>s:</p>
+<ul>
+<li><code>Init▽⤚IsL</code>: recursively initialize an <code>IT</code> from those intervals lying on the left of the median, where <a href="https://www.uiua.org/docs/keep"><code>▽ keep</code></a> selects elements from an array using some binary mask,</li>
+<li><code>⊃SL SR▽⤚IsCros</code> get the intervals that crossing the median, and both sort them by the left and the right using <a href="https://www.uiua.org/docs/fork"><code>⊃ fork</code></a>,</li>
+<li><code>Init▽⤚IsL</code>: recursively initialize an <code>IT</code> from those intervals lying on the right of the median,</li>
+<li><code>⋅∘</code>: keep only the median, and</li>
+<li><code>⊙◌</code>: keep only the intervals using <a href="https://www.uiua.org/tutorial/morestack#planet-notation">planet notation</a>.</li>
+</ul>
+<p>The computed values are then stored as the corresponding fields.</p>
+<h3 id="the-naive-query">The Naive Query</h3>
+<p>The naive query <code>QNaive ← ▽⤚IsCros All</code> checks for all intervals whether they cross the query point and correspondingly returns them.</p>
+<h3 id="the-simple-query">The Simple Query</h3>
+<p>The simple query <code>QSimple</code> employs divide-and-conquer, but does not consider early stopping when scanning for through the sorted intervals.</p>
+<pre><code>  QSimple ← |2 (
+    Empty.
+    ⨬(⊂⊃(▽⤚IsCros CL|⨬(QSimple L|QSimple R)◡(&gt;M))
+    | [])
+  )
+</code></pre>
+<p>Again, if the provided array is empty, it returns an empty array. Else, it performs a <a href="https://www.uiua.org/docs/join"><code>⊂ join</code></a> on the output of two functions which are applied via <a href="https://www.uiua.org/docs/fork"><code>⊃ fork</code></a>:</p>
+<ul>
+<li><code>▽⤚IsCros CL</code> does the same as the naive query, but only with the intervals stored at the corresponding level of the tree sorted by their left point, and</li>
+<li><code>⨬(QSimple L|QSimple R)◡(&gt;M)</code> queries either the left or the right subtree, depending on whether the query point is greater than the median <code>M</code>.</li>
+</ul>
+<h3 id="the-clever-query">The "Clever" Query</h3>
+<p>The clever query employs both divide-and-conquer and early stopping.</p>
+<pre><code>  FilterCL ← ⊙◌ ⍢↘₁ ⍣(◡(&lt;⊢⊢)|0) ⇌ CL
+  FilterCR ← ⊙◌ ⍢↘₁ ⍣(◡(&gt;⊣⊢)|0) CR
+  QClever ← |2 (
+    Empty.
+    ⨬(◡(&gt;M)
+      ⨬(⊂⊃(FilterCL)(QClever L)
+      | ⊂⊃(FilterCR)(QClever R)
+      )
+    | []
+    )
+  )
+</code></pre>
+<p>The basic code is the very similar, so I will only explain <code>FilterCL</code>. Admittedly, it is a complicated function and I do not quite like it. The insight is that instead of taking intervals until some point is exceeded, one can drop intervals to the same point from the other side of the sorted array. As such, first, the function first uses <a href="https://www.uiua.org/docs/reverse"><code>⇌ reverse</code></a> the array storing the intervals sorted by the left point. Then, <a href="https://www.uiua.org/docs/do"><code>⍢ do</code></a> executes <a href="https://www.uiua.org/docs/take"><code>↘₁ take</code></a>, which just pops the first element of an array, while the median is less than the first interval's first element with <code>&lt;⊢⊢</code>, which uses <a href="https://www.uiua.org/docs/first"><code>⊢ first</code></a>. The condition of the de-facto while loop is wrapped in a <a href="https://www.uiua.org/docs/try"><code>⍣ try</code></a>, which defaults to <code>0</code> if the array is empty and an exception is raised. Then lastly, the provided query point is just being dropped with planet notation <code>⊙◌</code>.</p>
+<h3 id="experiment-and-results">Experiment and Results</h3>
+<p>As we will consider execution speeds, let me preface this with a small table with a system specification:</p>
+<table><thead><tr><th>Spec</th><th>Detail</th></tr></thead><tbody>
+<tr><td>OS</td><td>macOS Sequoia 15.5 arm64</td></tr>
+<tr><td>Host</td><td>MacBook Air (M1, 2020)</td></tr>
+<tr><td>Kernel</td><td>Darwin 24.5.0</td></tr>
+<tr><td>CPU</td><td>Apple M1 (8) @ 3.20 GHz</td></tr>
+<tr><td>GPU</td><td>Apple M1 (7) [Integrated]</td></tr>
+<tr><td>Memory</td><td>8.00 GiB</td></tr>
+<tr><td>Uiua version</td><td>0.16.0</td></tr>
+</tbody></table>
+<p>The experiment is very simple. Essentially, for each number of intervals (size) in <code>Sizes</code>, <code>PerSize</code> many trees are generated from a set of intervals uniformly distributed in <code>[0, 1]</code>, along with similarly distributed query points. Note here that this randomness is not seeded, as in Uiua, <a href="https://www.uiua.org/docs/gen">seeded randomness</a> is in my opinion complicated to use, because for each invocation of <a href="https://www.uiua.org/docs/gen"><code>gen</code></a> (the seeded randomness generator), a different seed must be used.</p>
+<p>Then, on each combination of tree and query, the time of executing each of the different queries is measured, and averaged for each size. The output shows the average microseconds for the different kinds of queries. A simplified version that does not keep track of the data for reproducibility and does not handle inputs that are too large is shown below.</p>
+<div >
+	<iframe id="0_17_0-dev_1__IyBFeHBlcmltZW50YWwhCgrilIzilIDilbRJVAogIH4ge0wgQ0wgQ1IgUiBNIEFsbH0KICBNZWRpYW4g4oaQIMO3MiAvKyDiio_iip8g4oqD4oyK4oyIIMO3Mi0x4qe7LiDijYYKICBJc0wgICAg4oaQID7iiqPijYkKICBJc1IgICAg4oaQIDziiqLijYkKICBJc0Nyb3Mg4oaQIMOX4oqDKMKsSXNMKSjCrElzUikKICBTTCAgICAg4oaQIOKNhgogIFNSICAgICDihpAg4o2c4omh4oeM4o2GCiAgRW1wdHkgIOKGkCA9MOKnuwoKICBJbml0IOKGkCB8MSAoCiAgICBFbXB0eS4KICAgIOKorCjin5woTWVkaWFu4pmtKeKNhgogICAgICBJVOKKg-KKg-KKg-KKgyhJbml04pa94qSaSXNMKSjiioNTTCBTUuKWveKkmklzQ3JvcykoSW5pdOKWveKkmklzUiko4ouF4oiYKSjiipnil4wpCiAgICB8IFtdKQogICkKCiAgUU5haXZlIOKGkCDilr3ipJpJVH5Jc0Nyb3MgSVR-QWxsCgogIFFTaW1wbGUg4oaQIHwyICgKICAgIEVtcHR5LgogICAg4qisKOKKguKKgyjilr3ipJpJc0Nyb3MgQ0wpKOKorChRU2ltcGxlIEx8UVNpbXBsZSBSKeKXoSg-TSkpCiAgICB8IFtdKQogICkKCiAgRmlsdGVyQ0wg4oaQIOKKmeKXjCDijaLihpjigoEg4o2jKOKXoSg84oqi4oqiKXwwKSDih4wgQ0wKICBGaWx0ZXJDUiDihpAg4oqZ4peMIOKNouKGmOKCgSDijaMo4pehKD7iiqPiiqIpfDApIENSCiAgUUNsZXZlciDihpAgfDIgKAogICAgRW1wdHkuCiAgICDiqKwo4pehKD5NKQogICAgICDiqKwo4oqC4oqDKEZpbHRlckNMKShRQ2xldmVyIEwpCiAgICAgIHwg4oqC4oqDKEZpbHRlckNSKShRQ2xldmVyIFIpCiAgICAgICkKICAgIHwgW10KICAgICkKICApCuKUlOKUgOKVtAoKUmFuZFZlYyAgICAgICDihpAg4omh4ouF4pqC4oehClJhbmRMZW4gICAgICAg4oaQIMOX4oqD4pqCKC06MSkKUmFuZEludGVydmFscyDihpAg4o2J4oqfOuKKuCviirhSYW5kTGVuIFJhbmRWZWMKClNpemVzICAgICAgICDihpAgWzEgMjAgMzAgNTAgMTAwXQpUcmVlc1BlclNpemUg4oaQIDEwClF1ZXJpZXMgICAgICDihpAgUmFuZFZlYyAxMApUcmVlcyAgICAgICAg4oaQIOKZreKCguKKnihJVH5Jbml0IFJhbmRJbnRlcnZhbHMg4oqZ4peMKVNpemVz4oehVHJlZXNQZXJTaXplCgp-U2FtcGxlIHtOIFMgQyBRIFNpemV9CgrOvHMg4oaQIOKBhcOXMWU2CgpCZW5jaG1hcmsg4oaQICgKICBJVCEo4oqD4oqDKAogICAgICDijZxub3dRTmFpdmUKICAgIHwg4o2cbm93UVNpbXBsZQogICAgfCDijZxub3dRQ2xldmVyCiAgICApKQogIOKIqeKCgyjiipnil4zOvHMpCikKCkV4cGVyaW1lbnQg4oaQIOKZreKCgiDiip4oU2FtcGxlIOKKg-KKg0JlbmNobWFya-KLheKImCjip7tJVH5BbGwpKQp-T3V0cHV0IHtRTmFpdmUgUVNpbXBsZSBRQ2xldmVyIFNpemV9CkZtdEV4cCDihpAgU2FtcGxlIShPdXRwdXQg4oqD4oqD4oqDKOKJoU4pKOKJoVMpKOKJoUMpKOKJoVNpemUpKQpBdmcgICAg4oaQIMO3IOKKgyjip7spKC8rKQpSZXBvcnQg4oaQIEZtdEV4cCDiipxBdmcg4oq44omhU2FtcGxlflNpemUKUmVwb3J0IEV4cGVyaW1lbnQgVHJlZXMgUXVlcmllcwo=" frameborder="0" style="width: 100%; border:none; height: 2200px" 
+					      src="https://uiua.org/embed?src=0_17_0-dev_1__IyBFeHBlcmltZW50YWwhCgrilIzilIDilbRJVAogIH4ge0wgQ0wgQ1IgUiBNIEFsbH0KICBNZWRpYW4g4oaQIMO3MiAvKyDiio_iip8g4oqD4oyK4oyIIMO3Mi0x4qe7LiDijYYKICBJc0wgICAg4oaQID7iiqPijYkKICBJc1IgICAg4oaQIDziiqLijYkKICBJc0Nyb3Mg4oaQIMOX4oqDKMKsSXNMKSjCrElzUikKICBTTCAgICAg4oaQIOKNhgogIFNSICAgICDihpAg4o2c4omh4oeM4o2GCiAgRW1wdHkgIOKGkCA9MOKnuwoKICBJbml0IOKGkCB8MSAoCiAgICBFbXB0eS4KICAgIOKorCjin5woTWVkaWFu4pmtKeKNhgogICAgICBJVOKKg-KKg-KKg-KKgyhJbml04pa94qSaSXNMKSjiioNTTCBTUuKWveKkmklzQ3JvcykoSW5pdOKWveKkmklzUiko4ouF4oiYKSjiipnil4wpCiAgICB8IFtdKQogICkKCiAgUU5haXZlIOKGkCDilr3ipJpJVH5Jc0Nyb3MgSVR-QWxsCgogIFFTaW1wbGUg4oaQIHwyICgKICAgIEVtcHR5LgogICAg4qisKOKKguKKgyjilr3ipJpJc0Nyb3MgQ0wpKOKorChRU2ltcGxlIEx8UVNpbXBsZSBSKeKXoSg-TSkpCiAgICB8IFtdKQogICkKCiAgRmlsdGVyQ0wg4oaQIOKKmeKXjCDijaLihpjigoEg4o2jKOKXoSg84oqi4oqiKXwwKSDih4wgQ0wKICBGaWx0ZXJDUiDihpAg4oqZ4peMIOKNouKGmOKCgSDijaMo4pehKD7iiqPiiqIpfDApIENSCiAgUUNsZXZlciDihpAgfDIgKAogICAgRW1wdHkuCiAgICDiqKwo4pehKD5NKQogICAgICDiqKwo4oqC4oqDKEZpbHRlckNMKShRQ2xldmVyIEwpCiAgICAgIHwg4oqC4oqDKEZpbHRlckNSKShRQ2xldmVyIFIpCiAgICAgICkKICAgIHwgW10KICAgICkKICApCuKUlOKUgOKVtAoKUmFuZFZlYyAgICAgICDihpAg4omh4ouF4pqC4oehClJhbmRMZW4gICAgICAg4oaQIMOX4oqD4pqCKC06MSkKUmFuZEludGVydmFscyDihpAg4o2J4oqfOuKKuCviirhSYW5kTGVuIFJhbmRWZWMKClNpemVzICAgICAgICDihpAgWzEgMjAgMzAgNTAgMTAwXQpUcmVlc1BlclNpemUg4oaQIDEwClF1ZXJpZXMgICAgICDihpAgUmFuZFZlYyAxMApUcmVlcyAgICAgICAg4oaQIOKZreKCguKKnihJVH5Jbml0IFJhbmRJbnRlcnZhbHMg4oqZ4peMKVNpemVz4oehVHJlZXNQZXJTaXplCgp-U2FtcGxlIHtOIFMgQyBRIFNpemV9CgrOvHMg4oaQIOKBhcOXMWU2CgpCZW5jaG1hcmsg4oaQICgKICBJVCEo4oqD4oqDKAogICAgICDijZxub3dRTmFpdmUKICAgIHwg4o2cbm93UVNpbXBsZQogICAgfCDijZxub3dRQ2xldmVyCiAgICApKQogIOKIqeKCgyjiipnil4zOvHMpCikKCkV4cGVyaW1lbnQg4oaQIOKZreKCgiDiip4oU2FtcGxlIOKKg-KKg0JlbmNobWFya-KLheKImCjip7tJVH5BbGwpKQp-T3V0cHV0IHtRTmFpdmUgUVNpbXBsZSBRQ2xldmVyIFNpemV9CkZtdEV4cCDihpAgU2FtcGxlIShPdXRwdXQg4oqD4oqD4oqDKOKJoU4pKOKJoVMpKOKJoUMpKOKJoVNpemUpKQpBdmcgICAg4oaQIMO3IOKKgyjip7spKC8rKQpSZXBvcnQg4oaQIEZtdEV4cCDiipxBdmcg4oq44omhU2FtcGxlflNpemUKUmVwb3J0IEV4cGVyaW1lbnQgVHJlZXMgUXVlcmllcwo="
+					      webkitallowfullscreen
+					      mozallowfullscreen
+
+					      allowfullscreen>
+	</iframe>
+</div>
+<p>The actual experiments and code (find them on <a href="https://github.com/tmpr/ituiua">github</a>) include tests, try to be a little more reproducible and run with larger input parameters, namely the following:</p>
+<pre><code>Sizes   ← [1 20 30 50 100 1000 5000 10000 50000 100000]
+PerSize ← 20
+Queries ← RandVec 100
+</code></pre>
+<p>That is, the execution time of two-thousand queries are being averaged for each size. Additionally, I have disabled <code>QClever</code> for large inputs, as it is evidently too slow. The results are the following:</p>
+<pre><code>┌─                                     
+  QNaive   │QSimple  │QClever │Size    
+  ─────────┼─────────┼────────┼──────  
+  6.955    │17.6015  │20.651  │1       
+  6.4035   │33.249   │47.4755 │20      
+  5.669    │34.536   │50.9865 │30      
+  5.8285   │31.1215  │58.21   │50      
+  5.9675   │32.9605  │87.046  │100     
+  108.922  │104.7035 │895.5505│1000    
+  191.6165 │230.797  │NaN     │5000    
+  259.0495 │336.595  │NaN     │10000   
+  1078.8005│912.488  │NaN     │50000   
+  3106.4595│2384.619 │NaN     │100000  
+  8603.283 │5317.4415│NaN     │500000  
+                                      ┘
+</code></pre>
+<p>It turns out that for at least fifty thousand intervals, it makes some sense to use <code>QSimple</code> instead of <code>QNaive</code>. Not quite the massive improvement it should be, but this is probably due to the fact that <code>QSimple</code> is still an <code>O(n)</code> algorithm.</p>
+<h3 id="conclusion">Conclusion</h3>
+<p>Interval-trees are a
+beautiful and very simple
+data-structure. I believe
+they are one of the
+data-structures which are
+very easy to grasp quite
+intuitive. It was fun to
+implement them in Uiua,
+albeit that the language was does not yet allow for an idiomatic implementation of proper interval-trees. However, I believe that for this exact task, Uiua might not be the language. Recall that the problem is
+that there is no fast way to check the sorted intervals up to a certain point and then stop.</p>
+<p>First, a solution that I considered was to propose for <code>&lt;</code> to benefit from the <a href="https://www.uiua.org/docs/optimizations#sortedness-flags">sortedness
+flag</a>,
+which has been introduced recently; if an element in a sorted array is greater than some number, then so are all of the elements that follow it. This would allow for some optimization. The mask output by <code>&lt;</code> could then be used to filter the array. However, as demonstrated below, <code>&lt;</code> is already roughly as fast as it is to merely generate a range;  the sortedness optimization would thus not help much. The only thing that actually works quickly in this regard is to use the <a href="https://www.uiua.org/docs/take"><code>↙ take</code></a> operator, which takes a given number of elements from the start of an array.</p>
+<div >
+	<iframe id="0_17_0-dev_1__4oqZ4peM4o2cbm93KDwyMDApIMKw4o2GIOKHoSAxZTUgIyBDaGVja2luZyBzaHVmZmxlZAriipnil4zijZxub3coPDIwMCkg4o2GIOKHoSAxZTUgICMgQ2hlY2tpbmcgc29ydGVkCuKKmeKXjOKNnG5vdyjih6EgMWU1KSAgICAgICAgICMgR2VuZXJhdGluZyBhcnJheQriipnil4zijZxub3co4oaZIDIwMCkg4oehIDFlNSAgICMgVGFraW5nIAo=" frameborder="0" style="width: 100%; border:none; height: 300px" 
+					      src="https://uiua.org/embed?src=0_17_0-dev_1__4oqZ4peM4o2cbm93KDwyMDApIMKw4o2GIOKHoSAxZTUgIyBDaGVja2luZyBzaHVmZmxlZAriipnil4zijZxub3coPDIwMCkg4o2GIOKHoSAxZTUgICMgQ2hlY2tpbmcgc29ydGVkCuKKmeKXjOKNnG5vdyjih6EgMWU1KSAgICAgICAgICMgR2VuZXJhdGluZyBhcnJheQriipnil4zijZxub3co4oaZIDIwMCkg4oehIDFlNSAgICMgVGFraW5nIAo="
+					      webkitallowfullscreen
+					      mozallowfullscreen
+
+					      allowfullscreen>
+	</iframe>
+</div>
+<p>As such, to me it seems as if the only
+sensible addition to the language to solve this specific issue would
+be some way to bisect a sorted array,
+that is, perform a binary search for the
+index at which some element should be
+inserted. Providing the found index to <a href="https://www.uiua.org/docs/take"><code>↙ take</code></a> on
+every level of an interval-tree would
+yield an algorithm that is <code>O(log^2 n + m)</code>, which is not as good as
+interval-trees should be in theory, but
+probably good enough in practice. I have
+created a corresponding issue for that;
+let us see if there will be an update to
+the language.</p>
+
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://tmpr.github.io/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://tmpr.github.io/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.querySelector("html").classList;
+        const sessionTheme = sessionStorage.getItem("theme");
+
+        function setDark() {
+            cls.add("dark-mode");
+            cls.remove("light-mode");
+            sessionStorage.setItem("theme", "dark");
+        }
+        function setLight() {
+            cls.add("light-mode");
+            cls.remove("dark-mode");
+            sessionStorage.setItem("theme", "light");
+        }
+
+        if (sessionTheme === "dark") {
+            setDark();
+        } else if (sessionTheme === "light") {
+            setLight();
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            setDark();
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            setDark();
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            setLight();
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>
