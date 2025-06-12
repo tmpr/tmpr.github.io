@@ -274,6 +274,8 @@ yield an algorithm that is `O(log^2 n +
 m)`, which is not as good as
 interval-trees should be in theory, but
 probably good enough in practice. I have
-created a corresponding issue for that;
-let us see if there will be an update to
-the language.
+created a [corresponding issue for that](https://github.com/uiua-lang/uiua/issues/708).
+
+Alternatively, and this would be completely in the spirit of interval-trees, a simple
+`takewhile` would allow for an actual interval-tree, which is also fast; however, I would personally
+see this as a less pressing feature. Nevertheless, I have also requested such a feature in another [issue](https://github.com/uiua-lang/uiua/issues/709).
