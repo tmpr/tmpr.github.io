@@ -3,7 +3,7 @@ date = 2025-06-09
 title = "Interval-trees in Uiua"
 +++
 
-As part of the course [Advanced Datastructures](https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/ADS-MIRI) at [UPC](https://www.fib.upc.edu/en) in Barcelona, we were asked to implement so-called [interval-trees](https://en.wikipedia.org/wiki/Interval_tree) to solve the line-stabbing problem. I felt it would be interesting to see what it was like to implement a datastructure in [Uiua](https://www.uiua.org/). In this post, I will show and compare three Uiua implementations.
+As part of the course [Advanced Data Structures](https://www.fib.upc.edu/en/studies/masters/master-innovation-and-research-informatics/curriculum/syllabus/ADS-MIRI) at [UPC](https://www.fib.upc.edu/en) in Barcelona, we were asked to implement so-called [interval-trees](https://en.wikipedia.org/wiki/Interval_tree) to solve the line-stabbing problem. I felt it would be interesting to see what it was like to implement a datastructure in [Uiua](https://www.uiua.org/). In this post, I will show and compare three Uiua implementations.
 
 ## The Problem
 
